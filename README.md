@@ -49,9 +49,9 @@ Open the Decky Loader menu, select **Steam PiP**, and hit **Open**. From there y
 
 Fork of [rossimo/decky-pip](https://github.com/rossimo/decky-pip), which appears unmaintained. The original hardcoded Deck-only screen dimensions, which placed the picture-in-picture window incorrectly on any other device (e.g. a Steam Machine driving a TV). This fork detects the device and adjusts: a screen reporting Steam Deck's known native panel resolution (1280x800, true for both LCD and OLED) keeps the original, unmodified placement math; any other device measures its actual on-screen window size at runtime and places the picture correctly relative to it. See `src/screen.tsx` and `getScreenBounds()` in `src/pip.tsx`.
 
-## Why isn't it in the Decky store
+## Why isn't it in the Decky Store
 
-The Decky store's submission process requires confirming that generative AI was not used to write the majority of the code. Most of this fork — including everything added on top of the original `decky-pip` — was written with the help of Claude, an AI assistant, so that box can't be checked honestly. That's why it ships as a ZIP install instead.
+The Decky Store's submission process requires confirming that generative AI was not used to write the majority of the code. Most of this fork — including everything added on top of the original `decky-pip` — was written with the help of Claude, an AI assistant, so that box can't be checked honestly. As a result, it's available as a manual ZIP install instead.
 
 ## Building
 
