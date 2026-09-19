@@ -4,9 +4,8 @@ A picture-in-picture plugin for Decky Loader that gives you flexible, floating p
 
 Works out of the box with **YouTube**, **Twitch**, and **.m3u8 (HLS) streams** from local DVRs (like Channels DVR) and IPTV providers — plus anything else you can point a browser at.
 
-![Screenshot of PiP mode](picture.jpg)
 
-![Screenshot of Expand mode](expand.jpg)
+
 
 ## Features
 
