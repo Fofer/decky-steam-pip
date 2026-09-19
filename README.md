@@ -1,8 +1,8 @@
 # Steam PiP
 
-Steam PiP is a picture-in-picture plugin for Decky Loader that gives you flexible, floating picture-in-picture viewing on the Steam Deck and Steam Machine. It floats a small, resizable browser window — a live stream, a video, whatever URL you give it — over whatever title you're playing, so you can keep an eye on it without leaving your gameplay. It's also helpful for guides, walkthroughs and tutorials.
+Steam PiP is a picture-in-picture plugin for Decky Loader that gives you flexible, floating picture-in-picture viewing on the Steam Deck and Steam Machine. It floats a small, resizable browser window — a live stream, a video, whatever URL you give it — over whatever you're doing in SteamOS, so you can keep an eye on it without leaving your gameplay. It's also helpful for guides, walkthroughs and tutorials.
 
-Works out of the box with **YouTube**, **Twitch**, and **.m3u8 (HLS) streams** from local DVRs (like Channels DVR) and IPTV providers — plus anything other site or serbvice you can point a browser at. It does not, however, work with content protected by DRM such as Widevine (e.g. Netflix, Hulu, Disney+, etc.)
+Steam PiP works out of the box with **YouTube**, **Twitch**, and **.m3u8 (HLS) streams** from local DVRs (like Channels DVR) and IPTV providers — plus anything other site or service you can point a browser at. It does not, however, work with content protected by DRM such as Widevine (e.g. Netflix, Hulu, Disney+, etc.)
 
 ## Features
 
