@@ -55,3 +55,7 @@ out/*
 cli/
 cli/*
 cli/decky
+
+# Josh's private, personal-build-only channel bookmarks (local Channels DVR
+# addresses) — never meant to ship in the public repo
+src/personalBookmarks.tsx

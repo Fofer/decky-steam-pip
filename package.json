@@ -1,7 +1,7 @@
 {
-  "name": "decky-pip",
+  "name": "decky-steam-pip",
   "version": "1.0.0",
-  "description": "A plugin for viewing you favorite streams in-game",
+  "description": "Picture-in-picture plugin for Decky Loader, working on both Steam Deck and Steam Machine. Fork of decky-pip.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -9,22 +9,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rossimo/decky-pip.git"
+    "url": "git+https://github.com/Fofer/decky-steam-pip.git"
   },
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
     "steam-deck",
+    "steam-machine",
     "deck",
     "pip"
   ],
   "author": "Ross Squires <ross.squires@gmail.com>",
+  "contributors": [
+    "Josh"
+  ],
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/rossimo/decky-pip/issues"
+    "url": "https://github.com/Fofer/decky-steam-pip/issues"
   },
-  "homepage": "https://github.com/rossimo/decky-pip#readme",
+  "homepage": "https://github.com/Fofer/decky-steam-pip#readme",
   "devDependencies": {
     "@decky/rollup": "^1.0.1",
     "@decky/ui": "^4.9.0",

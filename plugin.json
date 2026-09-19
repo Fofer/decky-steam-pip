@@ -1,11 +1,11 @@
 {
-  "name": "Picture in Picture",
-  "author": "Ross Squires",
+  "name": "Steam PiP",
+  "author": "Ross Squires, Josh",
   "flags": [],
   "api_version": 1,
   "publish": {
     "tags": ["web", "video", "pip", "movies", "tv"],
-    "description": "Watch your favorite stream while you game!",
-    "image": "https://raw.githubusercontent.com/rossimo/decky-pip/refs/heads/main/picture.jpg"
+    "description": "Watch your favorite stream while you game, on Steam Deck or Steam Machine. Fork of decky-pip.",
+    "image": "https://raw.githubusercontent.com/Fofer/decky-steam-pip/refs/heads/main/picture.jpg"
   }
 }
