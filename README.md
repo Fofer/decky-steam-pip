@@ -2,7 +2,7 @@
 
 A picture-in-picture plugin for Decky Loader that gives you flexible, floating picture-in-picture viewing on the Steam Deck and Steam Machine. It floats a small, resizable browser window — a live stream, a video, whatever URL you give it — over whatever game you're playing, so you can keep an eye on it without leaving the game.
 
-Works out of the box with **YouTube**, **Twitch**, and **.m3u8 (HLS) streams** from local DVRs (like Channels DVR) and IPTV providers — plus anything else you can point a browser at. It does not, however, work with content protected by DRM such as Widevine (e.g. Netflix, Hulu, etc.)
+Works out of the box with **YouTube**, **Twitch**, and **.m3u8 (HLS) streams** from local DVRs (like Channels DVR) and IPTV providers — plus anything other site or serbvice you can point a browser at. It does not, however, work with content protected by DRM such as Widevine (e.g. Netflix, Hulu, Disney+, etc.)
 
 ## Features
 
