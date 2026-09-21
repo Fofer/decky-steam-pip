@@ -29,9 +29,9 @@ This is a plugin for **[Decky Loader](https://decky.xyz/)**, the plugin loader f
 
 ## Installing Steam PiP
 
-Since this plugin isn't in the Decky Store (see below), it installs from a ZIP file:
+Since this plugin isn't in the Decky Store (see below), it installs from a ZIP file. This project is still pre-1.0 and under active development, so there's no formal GitHub Release yet — instead, a pre-built ZIP is committed directly to this repo and kept up to date with `main`:
 
-1. Download the latest `decky-steam-pip.zip` from [Releases](https://github.com/Fofer/decky-steam-pip/releases), or build it yourself (see "Building" below).
+1. Download [`decky-steam-pip.zip`](https://github.com/Fofer/decky-steam-pip/raw/main/decky-steam-pip.zip) directly from this repo, or build it yourself (see "Building" below).
 2. Open the Decky Loader menu (the plug icon in Quick Access), go to Settings, and turn on **Developer Mode**.
 3. A new "Install Plugin from ZIP" option appears under the Developer tab — use it to select `decky-steam-pip.zip`.
 4. Steam PiP now shows up in the Decky Loader menu (Quick Access) with its own icon.
