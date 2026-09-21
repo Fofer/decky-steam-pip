@@ -1,12 +1,12 @@
-import React, { CSSProperties, Fragment, ReactNode, useEffect, useRef } from "react";
+import { CSSProperties, Fragment, ReactNode, useEffect, useRef } from "react";
 import { FaArrowsAlt, FaCamera, FaExchangeAlt, FaEyeSlash, FaPause, FaPlay, FaTimes, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
-import { MdReplay10, MdForward10, MdReplay30, MdForward30, MdOpenWith } from "react-icons/md";
+import { MdReplay10, MdForward10, MdReplay30, MdForward30 } from "react-icons/md";
 import { toaster } from "@decky/api";
 
 import { useGlobalState, withUrlChange } from "./globalState";
 import { useAutoHide } from "./useAutoHide";
 import { backendCallWithTimeout } from "./backendCall";
-import { CONTROL_BAR_WIDTH, ControlItemKey, Position, ViewItemKey, ViewMode, advanceMaximize, currentMaximizeStep, maximizeTitle, nextPosition, shortenPathForToast } from "./util";
+import { CONTROL_BAR_WIDTH, ControlItemKey, ViewItemKey, ViewMode, advanceMaximize, currentMaximizeStep, maximizeTitle, nextPosition, shortenPathForToast } from "./util";
 import { useScreenBounds } from "./screen";
 import { MaximizeIcon } from "./maximizeIcon";
 import { nowPlayingLabel } from "./nowPlayingLabel";
@@ -160,16 +160,16 @@ interface ControlBarProps {
 // floating Close) is only shown in Picture mode — Expand mode has no
 // meaningful "free edge" to wrap it around (the picture fills nearly the
 // whole screen). There, this component instead renders a shorter side bar
-// (Maximize/Screenshot/Hide/Swap — no Move, nothing to reposition) plus a
-// separate small dock of Back 10s/Play-Pause/Forward 10s/Close centered
-// along the bottom of the whole screen — see showExpandBottomBar below.
+// (Maximize/Screenshot/Hide/Swap) plus a separate small dock of Back 10s/
+// Play-Pause/Forward 10s/Close centered along the bottom of the whole
+// screen — see showExpandBottomBar below.
 export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, viewMode }: ControlBarProps) => {
     const [{
         playing, muted, volume, size, controlBarAlwaysVisible, opacity, url, previousUrl, bookmarks, nowPlaying,
         screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition,
         overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack,
         overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume,
-        overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, viewOrder, controlOrder,
+        overlayShowSeekBack30, overlayShowSeekForward30, viewOrder, controlOrder,
     }, setGlobalState] = useGlobalState();
     const autoHide = useAutoHide();
     const screenBounds = useScreenBounds();
@@ -275,11 +275,11 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
     // Each side-bar control's actual visibility, folding its own
     // per-control toggle (overlaySettingsModal.tsx) together with whatever
     // other condition already governed it (screenshotEnabled for
-    // Screenshot, swapAvailable for Swap, hidden entirely in Expand mode for
-    // Move) — computed once so both the button count below and the render
-    // further down agree on exactly the same set. Close isn't part of this
-    // side-bar set at all anymore — see showExpandBottomBar/overlayShowClose
-    // further down for where it lives in each mode.
+    // Screenshot, swapAvailable for Swap) — computed once so both the
+    // button count below and the render further down agree on exactly the
+    // same set. Close isn't part of this side-bar set at all anymore — see
+    // showExpandBottomBar/overlayShowClose further down for where it lives
+    // in each mode.
     const showMaximizeButton = overlayShowMaximize;
     // [Confirmed by Josh, 2026-09-20] Change Position cycles where the
     // floating picture sits on screen (util.tsx's nextPosition) — in Expand
@@ -289,70 +289,6 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
     const showScreenshotButton = screenshotEnabled && overlayShowScreenshot;
     const showHideButton = overlayShowHide;
     const showSwapButton = swapAvailable && overlayShowSwap;
-    // [Confirmed by Josh, 2026-09-20] Same reasoning as Position — a
-    // floating picture to drag around only exists in Picture mode.
-    const showMoveButton = overlayShowMove && viewMode !== ViewMode.Expand;
-
-    // Freeform drag-to-move state for the Move handle below — a plain ref
-    // (not React state) since drag position updates go straight to global
-    // state on every pointermove and don't need their own re-render trigger
-    // here. [Unverified] Uses the Pointer Events API (pointerdown/move/up
-    // with setPointerCapture) rather than native HTML5 drag-and-drop, since
-    // this needs continuous coordinates while dragging, not a single drop
-    // target — the same class of mouse/trackpad-cursor-only interaction as
-    // the volume slider's native <input type="range"> above. Whether a
-    // Steam Controller's cursor mode can actually HOLD a drag (as opposed
-    // to just clicking) is not confirmed; if it can't, Move simply won't be
-    // usable from a Steam Controller, same caveat as this whole overlay's
-    // own top-of-file note.
-    const moveDragRef = useRef<{ pointerId: number, startClientX: number, startClientY: number, startX: number, startY: number } | null>(null);
-    const clampFraction = (v: number) => Math.max(0, Math.min(1, v));
-
-    const onMovePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-        onInteraction();
-        e.currentTarget.setPointerCapture(e.pointerId);
-        moveDragRef.current = {
-            pointerId: e.pointerId,
-            startClientX: e.clientX,
-            startClientY: e.clientY,
-            startX: x,
-            startY: y,
-        };
-    };
-
-    const onMovePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-        const drag = moveDragRef.current;
-        if (!drag || drag.pointerId !== e.pointerId) return;
-        // [Unverified] Scales the raw pointer movement (this document's own
-        // CSS pixels) into the same "virtual" coordinate units x/y/width/
-        // height are expressed in (see useScreenBounds, screen.tsx) — by
-        // however much bigger or smaller this window's actual measured size
-        // is than that virtual size, assumed uniform on both axes. Not
-        // confirmed against real hardware; if a drag tracks the cursor at
-        // visibly the wrong speed on a given setup, this ratio is the first
-        // thing to check.
-        const scaleX = window.innerWidth ? screenBounds.width / window.innerWidth : 1;
-        const scaleY = window.innerHeight ? screenBounds.height / window.innerHeight : 1;
-        const dx = (e.clientX - drag.startClientX) * scaleX;
-        const dy = (e.clientY - drag.startClientY) * scaleY;
-        // Clamped so the picture can never be dragged off screen — the same
-        // 0..(screen - picture) range Position.Custom's own branch in
-        // pipBounds.tsx converts back out of these fractions.
-        const maxX = Math.max(0, screenBounds.width - width);
-        const maxY = Math.max(0, screenBounds.height - height);
-        const newX = Math.max(0, Math.min(maxX, drag.startX + dx));
-        const newY = Math.max(0, Math.min(maxY, drag.startY + dy));
-        setGlobalState(state => ({
-            ...state,
-            position: Position.Custom,
-            customPosX: maxX > 0 ? clampFraction(newX / maxX) : 0,
-            customPosY: maxY > 0 ? clampFraction(newY / maxY) : 0,
-        }));
-    };
-
-    const onMovePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-        if (moveDragRef.current?.pointerId === e.pointerId) moveDragRef.current = null;
-    };
 
     // [Confirmed by Josh, 2026-09-20] Render order for both the View side
     // bar and the Control row now comes from the user's own drag-to-reorder
@@ -373,7 +309,6 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
         hide: showHideButton,
         swap: showSwapButton,
         close: false,
-        move: showMoveButton,
     };
     const renderViewButton = (key: ViewItemKey): ReactNode => {
         switch (key) {
@@ -429,19 +364,6 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
                 );
             case 'close':
                 return null;
-            case 'move':
-                return (
-                    <button
-                        aria-label="Move Freely"
-                        title="Drag to move anywhere on screen"
-                        style={{ ...vButtonStyle, touchAction: 'none' }}
-                        onPointerDown={onMovePointerDown}
-                        onPointerMove={onMovePointerMove}
-                        onPointerUp={onMovePointerUp}
-                        onPointerCancel={onMovePointerUp}>
-                        <MdOpenWith />
-                    </button>
-                );
         }
     };
 
@@ -515,13 +437,13 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
     // (rather than a fixed constant), with a floor of 1 so the sizing math
     // below never divides by (effectively) zero on the rare setup where
     // every side-bar control has been turned off in Overlay Settings.
-    const vNumButtons = Math.max(1, [showMaximizeButton, showPositionButton, showScreenshotButton, showHideButton, showSwapButton, showMoveButton]
+    const vNumButtons = Math.max(1, [showMaximizeButton, showPositionButton, showScreenshotButton, showHideButton, showSwapButton]
         .filter(Boolean).length);
     // [Confirmed by Josh, 2026-09-20] — the actual (unfloored) count, so the
     // side bar itself can disappear entirely when every one of its controls
     // has been turned off in Overlay Settings, rather than showing an empty
     // strip the full height of the picture.
-    const anyVButtonVisible = showMaximizeButton || showPositionButton || showScreenshotButton || showHideButton || showSwapButton || showMoveButton;
+    const anyVButtonVisible = showMaximizeButton || showPositionButton || showScreenshotButton || showHideButton || showSwapButton;
     // Same idea for the horizontal transport bar — if every one of Skip
     // Back/Play-Pause/Skip Forward/Volume is off, there's nothing left to
     // show in it (Close, when shown, is its own separate button beyond the
@@ -661,9 +583,9 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
     // [Confirmed by Josh, 2026-09-20] This used to be Math.min(height,
     // vContentHeight) — capping the bar at the picture's own height even
     // when the buttons actually on needed more room than that. At a small
-    // enough picture size with enough View buttons enabled (six, once Move
-    // was added), buttonSize hits its MIN_BUTTON_SIZE floor and
-    // vContentHeight can end up taller than the picture itself; the old cap
+    // enough picture size with enough View buttons enabled, buttonSize hits
+    // its MIN_BUTTON_SIZE floor and vContentHeight can end up taller than
+    // the picture itself; the old cap
     // silently clipped whatever didn't fit into this box's invisible
     // overflowY:'auto' scroll region — with no visible scrollbar or any
     // other hint that something was cut off, one or more buttons (whichever
@@ -828,9 +750,8 @@ export const ControlBar = ({ x, y, width, height, verticalSide, horizontalSide, 
                     padding: `${vPadding}px 0`,
                 }}
             >
-                {/* Maximize, Move, Screenshot, Hide, Swap — Move drops out in
-                    Expand mode (nothing to reposition there) and Close lives
-                    in the bottom-center dock instead of here (see
+                {/* Maximize, Screenshot, Hide, Swap — Close lives in the
+                    bottom-center dock instead of here (see
                     showExpandBottomBar below). Render order now follows the
                     user's own viewOrder (overlaySettingsModal.tsx's drag
                     handles) rather than a fixed sequence — every button here

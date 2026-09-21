@@ -9,7 +9,6 @@ Steam PiP works out of the box with YouTube, Twitch, and .m3u8 (HLS) streams fro
 ## Features
 
 - **Picture-in-picture or expanded view** — a small floating box you can position in any corner/edge, or blow up to a large near-fullscreen view. Maximize cycles through five steps — Small, Medium, Large, Extra Large, and full Expand — one tap at a time, or fine-tune the exact size with the Size slider at any point in between.
-- **Freeform positioning** — grab the picture's own Move handle (in the on-screen overlay bar) and drag it anywhere on screen, instead of only the 8 preset corner/edge positions. The picture is kept from being dragged off-screen. The 8 presets and the Position button/QAM grid are still there and still work; freeform dragging is an additional option, not a replacement.
 - **Works with streaming sites and raw streams** — YouTube, Twitch, and other browser-playable sites work directly; `.m3u8` (HLS) URLs from a local DVR (Channels DVR, Plex, HDHomeRun tuner, etc.) or an IPTV provider are routed through a bundled HLS.js player so they play instead of triggering a download prompt.
 - **Saved channels/bookmarks** — save any number of URLs as named channels, pick from a dropdown, or cycle through them with a "Channel Surf" up/down control.
 - **Reorderable channel list** — grab a channel by its handle and move it up or down the list, then lock it in place; no more hunting for tiny up/down arrows.
@@ -52,7 +51,7 @@ Open the Decky Loader menu, select **Steam PiP**, and hit **Open**. From there y
 - Take a screenshot of what's currently playing, if enabled
 - Toggle **Maximize** to cycle through five sizes (Small/Medium/Large/Extra Large/Expand), **Swap** to the last channel you were watching, **Hide** the picture temporarily (it keeps playing), turn **Guide Data** on or off, or **Close** the picture entirely
 - Open **Display Settings** to choose which buttons show in the QAM and the on-screen overlay, and in what order
-- While in picture-in-picture view: reposition it on an 8-point grid or drag it freely with the Move handle, and adjust its size, margin from the screen edge, and brightness
+- While in picture-in-picture view: reposition it on an 8-point grid, and adjust its size, margin from the screen edge, and brightness
 
 ## Works on Steam Deck and Steam Machine
 

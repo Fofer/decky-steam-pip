@@ -102,15 +102,6 @@ export enum Position {
     BottomLeft,
     Left,
     TopLeft,
-    // [Confirmed by Josh, 2026-09-20] Appended after TopLeft, not inserted
-    // among the existing eight — those numeric values are persisted in
-    // localStorage today, so inserting Custom earlier in the list would
-    // silently reassign everyone's already-saved position. Custom
-    // coexists with the 8 presets rather than replacing them: dragging the
-    // picture (see pipBounds.tsx's Position.Custom branch) switches into
-    // this 9th mode, and the Position button/QAM grid still cycle through
-    // only the original 8.
-    Custom
 }
 
 // The enum's own declaration order is already a clockwise walk around the
@@ -183,19 +174,24 @@ export const shortenPathForToast = (path: string, keepSegments: number = 3): str
 // settings-modal rows and drive controlBar.tsx's actual render order (the
 // connected L-bar, the Separate pill mode, and the Expand-mode bottom dock
 // all read from the same two arrays).
-export type ViewItemKey = 'maximize' | 'position' | 'screenshot' | 'hide' | 'swap' | 'close' | 'move';
+// [Confirmed by Josh, 2026-09-21] 'move' — a freeform drag-to-move handle —
+// briefly existed here, but never reliably worked (at least on the Steam
+// Machine) and appeared to be causing occasional loss of controller focus
+// during actual gameplay, which matters far more than repositioning the
+// picture. Removed entirely rather than just hidden, along with all of its
+// supporting code (controlBar.tsx's pointer-drag handlers, Position.Custom
+// and customPosX/customPosY in globalState.tsx/pipBounds.tsx, the QAM
+// grid's own toggle for it). May come back in a later version done properly
+// (D-pad-drivable, not just mouse/trackpad drag), but not worth risking this
+// release over.
+export type ViewItemKey = 'maximize' | 'position' | 'screenshot' | 'hide' | 'swap' | 'close';
 export type ControlItemKey = 'seekBack30' | 'seekBack' | 'playPause' | 'seekForward' | 'seekForward30' | 'volume';
 
 // The order every fresh install (and "Reset to Default Order") ships with —
 // exactly the order these items were hardcoded in before becoming
 // reorderable, so resetting restores familiar behavior rather than some new
-// arbitrary arrangement. [Confirmed by Josh, 2026-09-20] 'move' (the
-// freeform drag handle) was added after these six already existed —
-// appended at the very end rather than inserted earlier, so an existing
-// install's already-persisted viewOrder (a plain array, merged by index —
-// see index.tsx's buildInitialState) picks up the new item at the end
-// instead of having its other 6 entries shifted or overwritten.
-export const DEFAULT_VIEW_ORDER: ViewItemKey[] = ['maximize', 'position', 'screenshot', 'hide', 'swap', 'close', 'move'];
+// arbitrary arrangement.
+export const DEFAULT_VIEW_ORDER: ViewItemKey[] = ['maximize', 'position', 'screenshot', 'hide', 'swap', 'close'];
 export const DEFAULT_CONTROL_ORDER: ControlItemKey[] = ['seekBack30', 'seekBack', 'playPause', 'seekForward', 'seekForward30', 'volume'];
 
 // Moves the item at index `from` to index `to`, shifting the items between

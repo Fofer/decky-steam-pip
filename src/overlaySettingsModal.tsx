@@ -18,7 +18,7 @@ import {
     FaTimes,
     FaVolumeUp,
 } from "react-icons/fa";
-import { MdReplay10, MdForward10, MdReplay30, MdForward30, MdOpenWith } from "react-icons/md";
+import { MdReplay10, MdForward10, MdReplay30, MdForward30 } from "react-icons/md";
 
 import { modalWithState } from "./modal";
 import { useGlobalState, State } from "./globalState";
@@ -77,11 +77,6 @@ const VIEW_ITEMS: Record<ViewItemKey, ViewItemInfo> = {
     hide: { icon: <FaEyeSlash />, label: "Hide", stateKey: 'overlayShowHide' },
     swap: { icon: <FaExchangeAlt />, label: "Swap", stateKey: 'overlayShowSwap' },
     close: { icon: <FaTimes />, label: "Close", stateKey: 'overlayShowClose' },
-    // [Confirmed by Josh, 2026-09-20] The freeform "drag to move anywhere"
-    // handle — a distinct icon from Position's own cycle-through-8-presets
-    // arrows (FaArrowsAlt), since it's a conceptually different action:
-    // this one's a continuous drag, not a tap-to-cycle.
-    move: { icon: <MdOpenWith />, label: "Move", stateKey: 'overlayShowMove' },
 };
 
 const CONTROL_ITEMS: Record<ControlItemKey, ViewItemInfo> = {
@@ -304,7 +299,7 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
         overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot,
         overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack,
         overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume,
-        overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, viewOrder, controlOrder,
+        overlayShowSeekBack30, overlayShowSeekForward30, viewOrder, controlOrder,
         qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30,
         qamShowPlayPause, qamShowVolume,
         qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor,
@@ -341,7 +336,6 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
         hide: overlayShowHide,
         swap: overlayShowSwap,
         close: overlayShowClose,
-        move: overlayShowMove,
     };
     const controlChecked: Record<ControlItemKey, boolean> = {
         seekBack30: overlayShowSeekBack30,

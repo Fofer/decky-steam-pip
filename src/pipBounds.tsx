@@ -141,23 +141,6 @@ export const usePipBounds = () => {
                 case Position.TopLeft: {
                     // do nothing, screen is calculated initially to top left
                 } break;
-                case Position.Custom: {
-                    // [Confirmed by Josh, 2026-09-20] customPosX/customPosY
-                    // (globalState.tsx) are fractions (0-1) of the space the
-                    // picture is actually free to occupy within these
-                    // available bounds — not raw pixels, so a saved custom
-                    // spot stays correct across different screen
-                    // resolutions, the same way the 8 presets already do.
-                    // 0 lands the picture flush at TopLeft, 1 flush at the
-                    // opposite (bottom-right) corner; clamped here too, in
-                    // case a stored value ever ends up outside 0-1.
-                    const maxX = Math.max(0, bounds.width - pictureWidth);
-                    const maxY = Math.max(0, bounds.height - pictureHeight);
-                    const fracX = Math.max(0, Math.min(1, settings.customPosX));
-                    const fracY = Math.max(0, Math.min(1, settings.customPosY));
-                    bounds.x += fracX * maxX;
-                    bounds.y += fracY * maxY;
-                } break;
             }
 
             bounds.width = pictureWidth;

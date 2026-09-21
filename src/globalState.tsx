@@ -211,12 +211,6 @@ export interface State {
     // extra.
     overlayShowSeekBack30: boolean
     overlayShowSeekForward30: boolean
-    // Whether the freeform "drag to move anywhere" handle shows in the
-    // on-screen overlay's side bar — same overlayShow*/View-column pattern
-    // as every other side-bar control. [Confirmed by Josh, 2026-09-20]
-    // Only meaningful in Picture mode (there's no floating picture to drag
-    // around in Expand mode, same reasoning as overlayShowPosition there).
-    overlayShowMove: boolean
     // Per-button visibility toggles for the QAM panel's own Playback row
     // (settings.tsx) — [Confirmed by Josh, 2026-09-20] separate from the
     // overlayShow* toggles above, which only govern the on-screen overlay.
@@ -266,16 +260,6 @@ export interface State {
     // mix, since they render in two physically different bars.
     viewOrder: ViewItemKey[]
     controlOrder: ControlItemKey[]
-    // The picture's own saved location when position === Position.Custom,
-    // as fractions (0-1) of the available on-screen area the picture is
-    // free to occupy — not raw pixels, so it stays correct across
-    // different screen resolutions (Deck vs. a Steam Machine's TV) the same
-    // way the existing 8 presets already do. Set by dragging the picture's
-    // own grab handle (pipBounds.tsx's Position.Custom branch); meaningless
-    // while position is one of the 8 presets, but always persisted so a
-    // custom spot isn't lost by switching to a preset and back.
-    customPosX: number
-    customPosY: number
 }
 
 // The one place `url` should ever be changed from — every channel-selection
