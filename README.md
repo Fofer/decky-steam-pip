@@ -1,6 +1,6 @@
 # Steam PiP
 
-Steam PiP is a video plugin for Decky Loader that gives you flexible, floating picture-in-picture viewing on the Steam Deck and Steam Machine. It floats a small, resizable browser window, playing a TV news stream, a live sporting event, web video, whatever URL you give it, over whatever you're doing in SteamOS, so you can keep an eye on it without leaving your gameplay. It's also helpful for walkthroughs, tutorials and game guides.
+Steam PiP is a video plugin for Decky Loader that gives you flexible, floating picture-in-picture viewing on the Steam Deck and Steam Machine. It floats a small, resizable browser window, playing a TV news stream, a live sporting event, web video, whatever URL you give it, over whatever you're doing in SteamOS, so you can keep an eye on it without leaving your gameplay. It's also helpful for walkthroughs, tutorials and game guides. It aims to be as controller-friendly as possible.
 
 Steam PiP works out of the box with YouTube, Twitch, and .m3u8 (HLS) streams from local DVRs (like [Plex](https://www.plex.tv/tv/), [Channels DVR](https://getchannels.com/dvr-server/) and [HDHomeRun tuners](https://www.silicondust.com/hdhomerun.html) and [IPTV](https://github.com/iptv-org/iptv) providers, plus any other site or free streaming service you can point a browser at. It does not, however, work with copyrighted content protected by DRM such as [Widevine](https://en.wikipedia.org/wiki/Widevine) (e.g. Netflix, Hulu, Disney+, etc.)
 
