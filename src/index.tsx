@@ -71,6 +71,8 @@ const DEFAULTS = {
     qamShowSeekBack: true,
     qamShowSeekForward: true,
     qamShowSeekForward30: true,
+    qamShowPlayPause: true,
+    qamShowVolume: true,
     qamUseColor: false,
     // Hex equivalents of the fixed defaults these replace when qamUseColor
     // is turned on (settings.tsx's QAM_PLAY_BG/QAM_PAUSE_BG and TitleBar's
@@ -147,8 +149,8 @@ const buildInitialState = (): State => {
 export default definePlugin(() => {
     const state = new StateManager<State>(buildInitialState());
 
-    state.watch(({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY }) =>
-        localStorage.setItem('pip', JSON.stringify({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY })));
+    state.watch(({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamShowPlayPause, qamShowVolume, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY }) =>
+        localStorage.setItem('pip', JSON.stringify({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamShowPlayPause, qamShowVolume, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY })));
 
     routerHook.addGlobalComponent("PictureInPicture", () => {
         return <GlobalContext.Provider value={state}>

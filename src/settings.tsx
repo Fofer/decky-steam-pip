@@ -467,7 +467,7 @@ export const TitleBar = () => {
 };
 
 export const Settings = () => {
-    const [{ viewMode, position, margin, url, previousUrl, size, bookmarks, volume, muted, opacity, hidden, showNowPlaying, defaultEpgUrl, playing, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, nowPlaying, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamUseColor, qamPlayColor, qamPauseColor }, setGlobalState, stateContext] = useGlobalState();
+    const [{ viewMode, position, margin, url, previousUrl, size, bookmarks, volume, muted, opacity, hidden, showNowPlaying, defaultEpgUrl, playing, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, nowPlaying, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamShowPlayPause, qamShowVolume, qamUseColor, qamPlayColor, qamPauseColor }, setGlobalState, stateContext] = useGlobalState();
     const currentBookmark = bookmarks.find(b => b.url === url);
     const previousBookmark = bookmarks.find(b => b.url === previousUrl);
     const swapAvailable = !!previousUrl && previousUrl !== url;
@@ -744,8 +744,22 @@ export const Settings = () => {
                         (overlaySettingsModal.tsx/controlBar.tsx). Each of the
                         four skip buttons can be hidden from this row via the
                         "QAM Layout" section in Display Settings
-                        (overlaySettingsModal.tsx) — Play/Pause itself has no
-                        toggle and always shows here. */}
+                        (overlaySettingsModal.tsx).
+                        [Confirmed by Josh, 2026-09-21] Play/Pause is now
+                        hideable too (qamShowPlayPause) — it used to be the
+                        one button in this row with no toggle, but there's no
+                        real reason to single it out from the rest anymore.
+                        Mute also joins this same row/size now (was its own
+                        separate row below) — same "line + size as the other
+                        playback buttons" Josh asked for after seeing it split
+                        out on his TV. It sits last, same relative position as
+                        "volume" in the on-screen overlay's own control order
+                        (CONTROL_ITEMS, overlaySettingsModal.tsx), and is
+                        gated by qamShowVolume, which also governs the
+                        SliderField row right below — one toggle hides the
+                        whole Mute+slider unit together, the same all-or-
+                        nothing relationship overlayShowVolume already has to
+                        the on-screen overlay's own Mute+slider pair. */}
                     <Focusable
                         style={{ display: 'flex', flexDirection: 'row', gap: ICON_ROW_GAP, paddingLeft: 4, justifyContent: 'center' }}
                         flow-children="horizontal">
@@ -771,20 +785,22 @@ export const Settings = () => {
                                 <MdReplay10 style={{ fontSize: 26 }} />
                             </IconButton>
                         )}
-                        <IconButton
-                            size={34}
-                            active={!playing}
-                            title={playing ? "Pause" : "Play"}
-                            style={qamUseColor
-                                ? { background: hexToRgba(playing ? qamPauseColor : qamPlayColor, QAM_COLOR_ALPHA) }
-                                : undefined}
-                            onActivate={() => setGlobalState(state => ({
-                                ...state,
-                                playPauseSeq: state.playPauseSeq + 1,
-                                playing: !state.playing
-                            }))}>
-                            {playing ? <FaPause /> : <FaPlay />}
-                        </IconButton>
+                        {qamShowPlayPause && (
+                            <IconButton
+                                size={34}
+                                active={!playing}
+                                title={playing ? "Pause" : "Play"}
+                                style={qamUseColor
+                                    ? { background: hexToRgba(playing ? qamPauseColor : qamPlayColor, QAM_COLOR_ALPHA) }
+                                    : undefined}
+                                onActivate={() => setGlobalState(state => ({
+                                    ...state,
+                                    playPauseSeq: state.playPauseSeq + 1,
+                                    playing: !state.playing
+                                }))}>
+                                {playing ? <FaPause /> : <FaPlay />}
+                            </IconButton>
+                        )}
                         {qamShowSeekForward && (
                             <IconButton
                                 size={34}
@@ -807,45 +823,44 @@ export const Settings = () => {
                                 <MdForward30 style={{ fontSize: 26 }} />
                             </IconButton>
                         )}
+                        {qamShowVolume && (
+                            <IconButton
+                                size={34}
+                                active={muted}
+                                title={muted ? "Unmute" : "Mute"}
+                                onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
+                                {muted ? <FaVolumeMute /> : <FaVolumeUp />}
+                            </IconButton>
+                        )}
                     </Focusable>
                 </PanelSectionRow>
-                <PanelSectionRow>
-                    {/* [Confirmed by Josh, 2026-09-20] Mute kept as its own
-                        real toggle (remembers the volume level to restore),
-                        not folded into dragging the slider down to 0. Its own
-                        row/Focusable, same as every other icon-row above. */}
-                    <Focusable
-                        style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}
-                        flow-children="horizontal">
-                        <IconButton
-                            active={muted}
-                            title={muted ? "Unmute" : "Mute"}
-                            onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
-                            {muted ? <FaVolumeMute /> : <FaVolumeUp />}
-                        </IconButton>
-                    </Focusable>
-                </PanelSectionRow>
-                <PanelSectionRow>
-                    {/* [Confirmed by Josh, 2026-09-21] Real SliderField, on
-                        its own full-width row — see the comment above this
-                        section's old VolumeSlider for why: a native range
-                        input was never actually D-pad-selectable no matter
-                        how it was wrapped, and SliderField only fought back
-                        when forced into a narrow shared row. Given its own
-                        row like Size/Margin/Brightness, it behaves exactly
-                        like those — real focus highlight, real D-pad
-                        drag/step. */}
-                    <SliderField
-                        label={muted ? <FaVolumeMute /> : <FaVolumeUp />}
-                        value={volume}
-                        disabled={muted}
-                        showValue={true}
-                        valueSuffix='%'
-                        onChange={volume => setGlobalState(state => ({ ...state, volume }))}
-                        min={0}
-                        max={100}
-                        step={1} />
-                </PanelSectionRow>
+                {qamShowVolume && (
+                    <PanelSectionRow>
+                        {/* [Confirmed by Josh, 2026-09-21] Real SliderField, on
+                            its own full-width row — see the comment above this
+                            section's old VolumeSlider for why: a native range
+                            input was never actually D-pad-selectable no matter
+                            how it was wrapped, and SliderField only fought back
+                            when forced into a narrow shared row. Given its own
+                            row like Size/Margin/Brightness, it behaves exactly
+                            like those — real focus highlight, real D-pad
+                            drag/step. Mute is a distinct, always-quick toggle
+                            up in the row above (remembers the volume level to
+                            restore) rather than folded into dragging this down
+                            to 0 — this slider is for granular, intentional
+                            control instead. */}
+                        <SliderField
+                            label={muted ? <FaVolumeMute /> : <FaVolumeUp />}
+                            value={volume}
+                            disabled={muted}
+                            showValue={true}
+                            valueSuffix='%'
+                            onChange={volume => setGlobalState(state => ({ ...state, volume }))}
+                            min={0}
+                            max={100}
+                            step={1} />
+                    </PanelSectionRow>
+                )}
                 <PanelSectionRow>
                     <Focusable
                         style={{ display: 'flex', flexDirection: 'row', gap: ICON_ROW_GAP, paddingLeft: 4, justifyContent: 'center' }}

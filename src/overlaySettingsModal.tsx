@@ -306,6 +306,7 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
         overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume,
         overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, viewOrder, controlOrder,
         qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30,
+        qamShowPlayPause, qamShowVolume,
         qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor,
     }, setGlobalState] = useGlobalState();
 
@@ -454,15 +455,19 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
             (settings.tsx) gets the same "which buttons show" control as the
             on-screen overlay, now that this modal covers both surfaces.
             Moved below the View/Control columns (was above them) and laid
-            out as a 2x2 grid instead of a single vertical list of four —
-            same four toggles, about half the height. Play/Pause itself
-            isn't listed — it's the one button in that row that's never
-            optional.
-            [Confirmed by Josh, 2026-09-21] Same Field-removal as Bar Layout
-            above — this was the section in Josh's photo actually showing the
-            boxed card background, next to the flat View/Control columns
-            above it. Now a plain header + description, same as Bar Layout,
-            so the whole modal matches. */}
+            out as a grid instead of a single vertical list, about half the
+            height.
+            [Confirmed by Josh, 2026-09-21] Play/Pause and Volume (Mute +
+            slider together) are now toggleable here too, same as the four
+            skip buttons — neither is singled out as always-on anymore, and
+            Mute itself moved onto the same row/size as the other playback
+            buttons in settings.tsx (was its own separate row). 2x3 grid now
+            to fit all six without growing taller per row.
+            [Confirmed by Josh, 2026-09-21 → same section] Same Field-removal
+            as Bar Layout above — this was the section in Josh's photo
+            actually showing the boxed card background, next to the flat
+            View/Control columns above it. Now a plain header + description,
+            same as Bar Layout, so the whole modal matches. */}
         <div style={{ marginTop: 10 }}>
             <div style={sectionHeaderStyle}>QAM Layout</div>
             <div style={sectionDescriptionStyle}>Playback row buttons, and optional custom colors.</div>
@@ -471,6 +476,8 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
                 <SimpleToggleRow icon={<MdForward30 />} label="Fwd 30s" checked={qamShowSeekForward30} onChange={set('qamShowSeekForward30')} />
                 <SimpleToggleRow icon={<MdReplay10 />} label="Back 10s" checked={qamShowSeekBack} onChange={set('qamShowSeekBack')} />
                 <SimpleToggleRow icon={<MdForward10 />} label="Fwd 10s" checked={qamShowSeekForward} onChange={set('qamShowSeekForward')} />
+                <SimpleToggleRow icon={<FaPause />} label="Play/Pause" checked={qamShowPlayPause} onChange={set('qamShowPlayPause')} />
+                <SimpleToggleRow icon={<FaVolumeUp />} label="Volume" checked={qamShowVolume} onChange={set('qamShowVolume')} />
             </div>
             {/* [Confirmed by Josh, 2026-09-20] Off by default — with it off,
                 the QAM Play/Pause button and the title bar's Close button

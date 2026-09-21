@@ -220,17 +220,24 @@ export interface State {
     // Per-button visibility toggles for the QAM panel's own Playback row
     // (settings.tsx) — [Confirmed by Josh, 2026-09-20] separate from the
     // overlayShow* toggles above, which only govern the on-screen overlay.
-    // Play/Pause itself has no toggle here and always shows — it's the one
-    // button that's never optional in either place. All four default to
-    // true (today's full 5-button row, unchanged for anyone who doesn't
-    // open Display Settings). Configured from the new "QAM Layout" section
-    // at the top of that same modal (overlaySettingsModal.tsx, renamed from
-    // "On-Screen Overlay Settings" to "Display Settings" now that it covers
-    // both surfaces).
+    // All default to true (today's full row, unchanged for anyone who
+    // doesn't open Display Settings). Configured from the "QAM Layout"
+    // section at the top of that same modal (overlaySettingsModal.tsx,
+    // renamed from "On-Screen Overlay Settings" to "Display Settings" now
+    // that it covers both surfaces).
     qamShowSeekBack30: boolean
     qamShowSeekBack: boolean
     qamShowSeekForward: boolean
     qamShowSeekForward30: boolean
+    // [Confirmed by Josh, 2026-09-21] Play/Pause used to be the one button
+    // in this row with no toggle (always shown) — now optional like the
+    // rest, same default-true treatment.
+    qamShowPlayPause: boolean
+    // [Confirmed by Josh, 2026-09-21] Governs the whole Mute-button-plus-
+    // slider unit together, same as this row's other items — mirrors
+    // overlayShowVolume's own all-or-nothing relationship to the on-screen
+    // overlay's Mute+slider pair (controlBar.tsx).
+    qamShowVolume: boolean
     // Whether the QAM's own Play/Pause button (settings.tsx) and its title
     // bar's Close button show any background color at all. Off by default —
     // both are plain, untinted icon buttons then, same as every other icon
