@@ -60,7 +60,7 @@ Fork of [rossimo/decky-pip](https://github.com/rossimo/decky-pip), which appears
 
 ## Why isn't it in the Decky Store
 
-The Decky Store's submission process requires confirming that generative AI was not used to write the majority of the code. Most of this fork — including everything added on top of the original `decky-pip` — was written with the help of Claude, an AI assistant, so that box can't be checked honestly. That's why it ships as a ZIP install instead.
+The Decky Store's submission process requires confirming that generative AI was not used to write the majority of the code. Most of this fork — including everything added on top of the original `decky-pip` — was written with the help of Claude, an AI assistant, so that box can't be checked honestly. That's why it ships as a manual ZIP install instead.
 
 ## Building
 
