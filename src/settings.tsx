@@ -1,7 +1,5 @@
 import {
     Focusable,
-    GamepadButton,
-    GamepadEvent,
     PanelSection,
     PanelSectionRow,
     SliderField,
@@ -277,60 +275,24 @@ const HideAudioIcon = ({ hidden, audioIndicatorEnabled }: { hidden: boolean, aud
 // <input type="range"> isn't part of Decky's own gamepad-navigation graph at
 // all — only Focusable components are — so the D-pad could never land on it
 // to begin with, wide or not; only a mouse/trackpad cursor could actually
-// drag its thumb. Wrapping it in a Focusable and handling DIR_LEFT/
-// DIR_RIGHT directly (same idea as reorderModal.tsx's own onGrabButtonDown)
-// gives it real D-pad control — nudging the value a step at a time while
-// focused — without inheriting SliderField's own "ignores a narrow wrapping
-// div, always renders full-width" behavior (see the PanelSectionRow's own
-// comment below), which is what forced this to be a plain input rather than
-// SliderField in the first place. preventDefault() stops Steam's built-in
-// focus-nav from ALSO moving focus off this row to the next one on the same
-// D-pad press. The focus highlight (border/background) is drawn on the
-// wrapper since a native range input's own focus ring isn't something this
-// can restyle reliably across platforms.
-const VOLUME_NUDGE = 2;
-
-const VolumeSlider = ({ volume, muted, onChange }: { volume: number, muted: boolean, onChange: (volume: number) => void }) => {
-    const [focused, setFocused] = useState(false);
-    const nudge = (delta: number) => onChange(Math.max(0, Math.min(100, volume + delta)));
-
-    return (
-        <Focusable
-            style={{
-                flex: 1,
-                minWidth: 0,
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: 6,
-                padding: '2px 6px',
-                background: focused ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
-                border: focused ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
-            }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onButtonDown={(evt: GamepadEvent) => {
-                if (muted) return;
-                if (evt.detail.button === GamepadButton.DIR_LEFT) {
-                    evt.preventDefault();
-                    nudge(-VOLUME_NUDGE);
-                } else if (evt.detail.button === GamepadButton.DIR_RIGHT) {
-                    evt.preventDefault();
-                    nudge(VOLUME_NUDGE);
-                }
-            }}>
-            <input
-                aria-label="Volume"
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={volume}
-                disabled={muted}
-                onChange={e => onChange(Number(e.target.value))}
-                style={{ flex: 1, minWidth: 0, accentColor: 'white', opacity: muted ? 0.4 : 1 }} />
-        </Focusable>
-    );
-};
+// [Confirmed by Josh, 2026-09-20 → corrected 2026-09-21 after hardware
+// testing] The plain native <input type="range"> tried here — even widened
+// to fill the row and wrapped in a Focusable with manual DIR_LEFT/DIR_RIGHT
+// handling — never actually became D-pad-selectable. A native range input
+// simply isn't part of Steam's gamepad-nav focus graph, wrapper or not: the
+// D-pad cursor skipped straight over the whole row (Mute stayed reachable,
+// but nothing below or above it could land on the slider itself), and
+// dragging it was mouse/trackpad-only the entire time, exactly the
+// limitation this was meant to fix. Switched to Decky's own SliderField
+// instead — the same real, gamepad-nav-integrated slider already used for
+// Size/Margin/Brightness above (and visibly working/selectable in Josh's
+// own screenshot) — which is Valve's actual D-pad-drivable widget
+// (minimumDpadGranularity exists specifically for stepping it with a
+// controller). The earlier note about SliderField "ignoring a narrow
+// wrapping div and always rendering full width" was about forcing it to sit
+// narrowly beside the Mute button in one flex row; giving it its own full
+// PanelSectionRow — same as every other SliderField in this file — avoids
+// that fight entirely rather than working around it.
 
 // The full-width "what am I watching" button that replaced Decky's native
 // Channel DropdownItem (see the comment where it's used, below, for why).
@@ -848,28 +810,10 @@ export const Settings = () => {
                     </Focusable>
                 </PanelSectionRow>
                 <PanelSectionRow>
-                    {/* [Confirmed by Josh, 2026-09-20] Decky's own SliderField
-                        turned out to ignore a fixed-width wrapping div
-                        entirely — it kept rendering at the panel's full width
-                        no matter how narrow that div was (46px, then 34px,
-                        no difference), overflowing past the panel's right
-                        edge and dragging the whole QAM sideways on
-                        interaction. A plain native range input, sized
-                        directly like controlBar.tsx's own on-screen volume
-                        slider, doesn't have that problem.
-                        [Confirmed by Josh, 2026-09-20] Previously kept at a
-                        short, fixed 100px so it could never overflow — but
-                        that also meant the only realistically clickable
-                        target for a controller's cursor was the Mute icon;
-                        the slider itself was too short to reliably grab and
-                        drag. It now grows (flex: 1) to fill the rest of this
-                        row's own width — same width the icon rows above and
-                        below it already span — with minWidth: 0 so a flex
-                        child doesn't refuse to shrink below its intrinsic
-                        content size on first layout. See VolumeSlider's own
-                        comment above for why the slider itself is wrapped in
-                        a Focusable rather than left as a bare input — width
-                        alone didn't make it D-pad reachable. */}
+                    {/* [Confirmed by Josh, 2026-09-20] Mute kept as its own
+                        real toggle (remembers the volume level to restore),
+                        not folded into dragging the slider down to 0. Its own
+                        row/Focusable, same as every other icon-row above. */}
                     <Focusable
                         style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}
                         flow-children="horizontal">
@@ -879,11 +823,28 @@ export const Settings = () => {
                             onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
                             {muted ? <FaVolumeMute /> : <FaVolumeUp />}
                         </IconButton>
-                        <VolumeSlider
-                            volume={volume}
-                            muted={muted}
-                            onChange={volume => setGlobalState(state => ({ ...state, volume }))} />
                     </Focusable>
+                </PanelSectionRow>
+                <PanelSectionRow>
+                    {/* [Confirmed by Josh, 2026-09-21] Real SliderField, on
+                        its own full-width row — see the comment above this
+                        section's old VolumeSlider for why: a native range
+                        input was never actually D-pad-selectable no matter
+                        how it was wrapped, and SliderField only fought back
+                        when forced into a narrow shared row. Given its own
+                        row like Size/Margin/Brightness, it behaves exactly
+                        like those — real focus highlight, real D-pad
+                        drag/step. */}
+                    <SliderField
+                        label={muted ? <FaVolumeMute /> : <FaVolumeUp />}
+                        value={volume}
+                        disabled={muted}
+                        showValue={true}
+                        valueSuffix='%'
+                        onChange={volume => setGlobalState(state => ({ ...state, volume }))}
+                        min={0}
+                        max={100}
+                        step={1} />
                 </PanelSectionRow>
                 <PanelSectionRow>
                     <Focusable

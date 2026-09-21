@@ -1,7 +1,6 @@
 import {
     ConfirmModal,
     ModalRootProps,
-    Field,
     Focusable,
     ToggleField,
     ButtonItem,
@@ -40,6 +39,22 @@ const rowStyle: CSSProperties = {
     alignItems: 'center',
     gap: 6,
     padding: '3px 0',
+};
+
+// [Confirmed by Josh, 2026-09-21] Matches columnHeaderStyle exactly — used
+// for the "Bar Layout"/"QAM Layout" section labels below, now that those
+// sections are plain flat divs (see the comment on the modal's return JSX)
+// instead of Decky's own Field, which renders a distinct boxed/card
+// background around its children. Kept as its own separately-named constant
+// rather than reusing columnHeaderStyle directly since these two labels
+// happen to look identical today but sit in a different place in the tree —
+// changing one's look later shouldn't silently change the other's.
+const sectionHeaderStyle: CSSProperties = columnHeaderStyle;
+
+const sectionDescriptionStyle: CSSProperties = {
+    fontSize: 11,
+    opacity: 0.6,
+    padding: '0 0 4px',
 };
 
 // Static per-item display info (icon/label/tooltip/the toggle's own
@@ -360,19 +375,31 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
             it's the setting most people open this modal to check/change,
             and it governs how the two columns below are actually drawn
             on-screen (one connected L vs. two separate pills), so seeing it
-            first makes more sense than after them. */}
-        <Field
-            label="Bar Layout"
-            description={overlayConnected
-                ? "Connected: one L-shaped bar around the picture's corner."
-                : "Separate: two independent pills, sized to fit only what's on."}
-            bottomSeparator="standard"
-            childrenLayout="below">
-            <ToggleField
-                label="Connected"
-                checked={overlayConnected}
-                onChange={set('overlayConnected')} />
-        </Field>
+            first makes more sense than after them.
+            [Confirmed by Josh, 2026-09-21] Was wrapped in Decky's own Field,
+            which — per Josh's own photo from his Steam Machine/TV — renders
+            a distinct bluish-gray rounded card behind everything inside it.
+            That looked inconsistent next to the View/Control columns below,
+            which were never Field-wrapped and render flat/black with only
+            each ToggleField's own switch showing a gray pill. Rebuilt as a
+            plain header + description + row, same look and same D-pad
+            navigation feel as those columns, so this whole modal now reads
+            as one continuous flat list rather than two different styles. */}
+        <div style={{ marginTop: 2 }}>
+            <div style={sectionHeaderStyle}>Bar Layout</div>
+            <div style={sectionDescriptionStyle}>
+                {overlayConnected
+                    ? "Connected: one L-shaped bar around the picture's corner."
+                    : "Separate: two independent pills, sized to fit only what's on."}
+            </div>
+            <Focusable style={rowStyle} flow-children="horizontal">
+                <div style={{ flex: 1, fontSize: 12 }}>Connected</div>
+                <ToggleField
+                    checked={overlayConnected}
+                    onChange={set('overlayConnected')}
+                    bottomSeparator="none" />
+            </Focusable>
+        </div>
         {/* Two columns matching the on-screen overlay's own two segments —
             [Confirmed by Josh, 2026-09-20] View (the side bar) on the left,
             Control (the horizontal bar) on the right — rather than one long
@@ -414,12 +441,15 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
         {/* [Confirmed by Josh, 2026-09-20] Restores both arrays to the
             order these items originally shipped in — a plain reset, not a
             confirmation dialog, since it only touches display order and is
-            trivially undone by dragging things back. */}
-        <Field bottomSeparator="none" childrenLayout="below">
+            trivially undone by dragging things back.
+            [Confirmed by Josh, 2026-09-21] No longer Field-wrapped, same
+            flat-background reasoning as Bar Layout/QAM Layout above/below —
+            a bare margin is all this needs. */}
+        <div style={{ marginTop: 10 }}>
             <ButtonItem layout="below" onClick={resetToDefault}>
                 Reset to Default Order
             </ButtonItem>
-        </Field>
+        </div>
         {/* [Confirmed by Josh, 2026-09-20] The QAM panel's own Playback row
             (settings.tsx) gets the same "which buttons show" control as the
             on-screen overlay, now that this modal covers both surfaces.
@@ -427,12 +457,15 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
             out as a 2x2 grid instead of a single vertical list of four —
             same four toggles, about half the height. Play/Pause itself
             isn't listed — it's the one button in that row that's never
-            optional. */}
-        <Field
-            label="QAM Layout"
-            description="Playback row buttons, and optional custom colors."
-            bottomSeparator="none"
-            childrenLayout="below">
+            optional.
+            [Confirmed by Josh, 2026-09-21] Same Field-removal as Bar Layout
+            above — this was the section in Josh's photo actually showing the
+            boxed card background, next to the flat View/Control columns
+            above it. Now a plain header + description, same as Bar Layout,
+            so the whole modal matches. */}
+        <div style={{ marginTop: 10 }}>
+            <div style={sectionHeaderStyle}>QAM Layout</div>
+            <div style={sectionDescriptionStyle}>Playback row buttons, and optional custom colors.</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 10 }}>
                 <SimpleToggleRow icon={<MdReplay30 />} label="Back 30s" checked={qamShowSeekBack30} onChange={set('qamShowSeekBack30')} />
                 <SimpleToggleRow icon={<MdForward30 />} label="Fwd 30s" checked={qamShowSeekForward30} onChange={set('qamShowSeekForward30')} />
@@ -466,7 +499,7 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
                     </Focusable>
                 )}
             </div>
-        </Field>
+        </div>
     </ConfirmModal>;
 };
 
