@@ -749,17 +749,13 @@ export const Settings = () => {
                         hideable too (qamShowPlayPause) — it used to be the
                         one button in this row with no toggle, but there's no
                         real reason to single it out from the rest anymore.
-                        Mute also joins this same row/size now (was its own
-                        separate row below) — same "line + size as the other
-                        playback buttons" Josh asked for after seeing it split
-                        out on his TV. It sits last, same relative position as
-                        "volume" in the on-screen overlay's own control order
-                        (CONTROL_ITEMS, overlaySettingsModal.tsx), and is
-                        gated by qamShowVolume, which also governs the
-                        SliderField row right below — one toggle hides the
-                        whole Mute+slider unit together, the same all-or-
-                        nothing relationship overlayShowVolume already has to
-                        the on-screen overlay's own Mute+slider pair. */}
+                        [Confirmed by Josh, 2026-09-21, same day → corrected]
+                        Mute briefly lived in this same row, but Josh asked it
+                        back out again — it's different functionality (a
+                        toggle, not a transport action) and reads better
+                        grouped with its own slider below, with real space
+                        between the two groups. See the Mute+slider group
+                        right after this row. */}
                     <Focusable
                         style={{ display: 'flex', flexDirection: 'row', gap: ICON_ROW_GAP, paddingLeft: 4, justifyContent: 'center' }}
                         flow-children="horizontal">
@@ -823,43 +819,69 @@ export const Settings = () => {
                                 <MdForward30 style={{ fontSize: 26 }} />
                             </IconButton>
                         )}
-                        {qamShowVolume && (
-                            <IconButton
-                                size={34}
-                                active={muted}
-                                title={muted ? "Unmute" : "Mute"}
-                                onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
-                                {muted ? <FaVolumeMute /> : <FaVolumeUp />}
-                            </IconButton>
-                        )}
                     </Focusable>
                 </PanelSectionRow>
                 {qamShowVolume && (
-                    <PanelSectionRow>
-                        {/* [Confirmed by Josh, 2026-09-21] Real SliderField, on
-                            its own full-width row — see the comment above this
-                            section's old VolumeSlider for why: a native range
-                            input was never actually D-pad-selectable no matter
-                            how it was wrapped, and SliderField only fought back
-                            when forced into a narrow shared row. Given its own
-                            row like Size/Margin/Brightness, it behaves exactly
-                            like those — real focus highlight, real D-pad
-                            drag/step. Mute is a distinct, always-quick toggle
-                            up in the row above (remembers the volume level to
-                            restore) rather than folded into dragging this down
-                            to 0 — this slider is for granular, intentional
-                            control instead. */}
-                        <SliderField
-                            label={muted ? <FaVolumeMute /> : <FaVolumeUp />}
-                            value={volume}
-                            disabled={muted}
-                            showValue={true}
-                            valueSuffix='%'
-                            onChange={volume => setGlobalState(state => ({ ...state, volume }))}
-                            min={0}
-                            max={100}
-                            step={1} />
-                    </PanelSectionRow>
+                    <>
+                        <PanelSectionRow>
+                            {/* [Confirmed by Josh, 2026-09-21] Mute sits first
+                                in this group, directly above its own slider,
+                                with a real gap (marginTop) separating it from
+                                the transport row above — a distinct on/off
+                                toggle, not another transport action, so it
+                                reads as its own little unit rather than a
+                                sixth button on that row.
+                                Never blue: this button used to rely on
+                                IconButton's own `active` prop, which always
+                                paints a fixed blue (iconButtonStyle,
+                                shared with the position grid's own "selected"
+                                cell) — the same blue as every other toggled-
+                                on button in this panel, but Josh wants Mute
+                                specifically to never read as that "selected/
+                                on" blue. `active` is left unset here and the
+                                background is driven entirely by `style`
+                                instead: plain/transparent (matching every
+                                other untinted icon button) when unmuted, a
+                                light red tint when muted. */}
+                            <Focusable
+                                style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}
+                                flow-children="horizontal">
+                                <IconButton
+                                    size={34}
+                                    title={muted ? "Unmute" : "Mute"}
+                                    style={muted ? { background: 'rgba(220, 90, 90, 0.4)', border: '2px solid rgba(255, 140, 140, 0.6)' } : undefined}
+                                    onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
+                                    {muted ? <FaVolumeMute /> : <FaVolumeUp />}
+                                </IconButton>
+                            </Focusable>
+                        </PanelSectionRow>
+                        <PanelSectionRow>
+                            {/* [Confirmed by Josh, 2026-09-21] Real SliderField,
+                                on its own full-width row — see the comment
+                                above this section's old VolumeSlider for why:
+                                a native range input was never actually
+                                D-pad-selectable no matter how it was wrapped,
+                                and SliderField only fought back when forced
+                                into a narrow shared row. Given its own row
+                                like Size/Margin/Brightness, it behaves exactly
+                                like those — real focus highlight, real D-pad
+                                drag/step.
+                                No leading icon here anymore (was a plain
+                                volume/muted glyph via `label`) — Josh pointed
+                                out it was redundant right next to the Mute
+                                button directly above it, which already shows
+                                the same on/off state. */}
+                            <SliderField
+                                value={volume}
+                                disabled={muted}
+                                showValue={true}
+                                valueSuffix='%'
+                                onChange={volume => setGlobalState(state => ({ ...state, volume }))}
+                                min={0}
+                                max={100}
+                                step={1} />
+                        </PanelSectionRow>
+                    </>
                 )}
                 <PanelSectionRow>
                     <Focusable
