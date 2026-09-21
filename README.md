@@ -6,8 +6,6 @@ Steam PiP works out of the box with YouTube, Twitch, and .m3u8 (HLS) streams fro
 
 ![Screenshot of PiP mode](picture.jpg)
 
-![Screenshot of Expand mode](expand.jpg)
-
 ## Features
 
 - **Picture-in-picture or expanded view** — a small floating box you can position in any corner/edge, or blow up to a large near-fullscreen view. Maximize cycles through five steps — Small, Medium, Large, Extra Large, and full Expand — one tap at a time, or fine-tune the exact size with the Size slider at any point in between.
