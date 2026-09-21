@@ -439,14 +439,16 @@ export const OverlaySettingsModal = (props: ModalRootProps) => {
                 <SimpleToggleRow icon={<MdReplay10 />} label="Back 10s" checked={qamShowSeekBack} onChange={set('qamShowSeekBack')} />
                 <SimpleToggleRow icon={<MdForward10 />} label="Fwd 10s" checked={qamShowSeekForward} onChange={set('qamShowSeekForward')} />
             </div>
-            {/* [Confirmed by Josh, 2026-09-20] Off by default — the QAM
-                Play/Pause button and the title bar's Close button keep their
-                fixed green/blue/red look for anyone who never opens this,
-                same as before this toggle existed. Turning it on seeds the
-                pickers below with hex equivalents of those same fixed
-                colors (index.tsx's DEFAULTS) rather than some arbitrary
-                starting color, so turning it on doesn't change anything
-                visually until a swatch is actually changed. */}
+            {/* [Confirmed by Josh, 2026-09-20] Off by default — with it off,
+                the QAM Play/Pause button and the title bar's Close button
+                are plain, no background tint at all, same as every other
+                icon button in this panel. Turning it on is what applies any
+                color, and the pickers below start out seeded with hex
+                equivalents of the green/blue/red this used to always show
+                (index.tsx's DEFAULTS), so turning it on for the first time
+                shows that familiar look rather than some arbitrary color —
+                nothing changes on screen until a swatch is actually
+                changed. */}
             <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
                 <SimpleToggleRow icon={<FaPalette />} label="Use Color" checked={qamUseColor} onChange={set('qamUseColor')} />
                 {qamUseColor && (

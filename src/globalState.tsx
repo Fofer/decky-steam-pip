@@ -232,10 +232,13 @@ export interface State {
     qamShowSeekForward: boolean
     qamShowSeekForward30: boolean
     // Whether the QAM's own Play/Pause button (settings.tsx) and its title
-    // bar's Close button use user-picked colors instead of their fixed
-    // defaults (green Play / blue Pause / red Close). Off by default — the
-    // fixed colors are unchanged for anyone who doesn't open Display
-    // Settings. Configured from QAM Layout (overlaySettingsModal.tsx).
+    // bar's Close button show any background color at all. Off by default —
+    // both are plain, untinted icon buttons then, same as every other icon
+    // button in the panel. On applies the user's own picked colors below
+    // (seeded from green Play / blue Pause / red Close, this fork's
+    // original fixed look, so turning it on doesn't change anything until a
+    // color is actually picked). Configured from QAM Layout
+    // (overlaySettingsModal.tsx).
     qamUseColor: boolean
     // User-picked colors for the above, as "#rrggbb" hex strings (the only
     // format a native <input type="color"> works with) — converted to an

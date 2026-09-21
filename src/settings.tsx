@@ -1,5 +1,7 @@
 import {
     Focusable,
+    GamepadButton,
+    GamepadEvent,
     PanelSection,
     PanelSectionRow,
     SliderField,
@@ -138,20 +140,18 @@ const iconButtonStyle = (focused: boolean, active: boolean, size: number = ICON_
 // exclusive, they just serve different input methods.
 const TOOLTIP_DELAY_MS = 3000;
 
-// Fixed default tints for the QAM panel's own Play/Pause button —
-// [Confirmed by Josh, 2026-09-20] light green while Play is showing (tap to
-// start), light blue while Pause is showing (tap to stop). These are the
-// only coloring the on-screen overlay's matching button ever had too, until
-// that tinting was dropped there to keep it exclusive to this panel. Used
-// as-is unless QAM Layout's "Use Color" toggle (qamUseColor) is on, in which
-// case the user's own picked colors (qamPlayColor/qamPauseColor) replace
-// them — see the alpha these get combined with via hexToRgba, below.
-const QAM_PLAY_BG = 'rgba(120, 200, 120, 0.55)';
-const QAM_PAUSE_BG = 'rgba(110, 165, 220, 0.55)';
+// [Confirmed by Josh, 2026-09-20] QAM Layout's "Use Color" toggle
+// (qamUseColor) is OFF by default, and while it's off the QAM panel's own
+// Play/Pause button and the title bar's Close button are plain — no
+// background tint at all, same as every other icon button in this panel —
+// rather than the green/blue/red these used to always show. Turning the
+// toggle on is what applies color at all, using the user's own picked hex
+// colors (qamPlayColor/qamPauseColor/qamCloseColor) combined with a fixed
+// alpha via hexToRgba below. Those hex values are still seeded (in
+// index.tsx's DEFAULTS) with green/blue/red equivalents, so the first time
+// someone turns the toggle on, that's the color they see before picking
+// anything else — the green/blue/red look isn't gone, it's just opt-in now.
 const QAM_COLOR_ALPHA = 0.55;
-// Same idea for the title bar's Close button — its own fixed default,
-// applied unless qamUseColor is on.
-const QAM_CLOSE_BG = 'rgba(220, 60, 60, 0.35)';
 const QAM_CLOSE_COLOR_ALPHA = 0.35;
 
 export const IconButton = ({ onActivate, active, title, size, style, children }: { onActivate: () => void, active?: boolean, title?: string, size?: number, style?: CSSProperties, children: ReactNode }) => {
@@ -269,6 +269,66 @@ const HideAudioIcon = ({ hidden, audioIndicatorEnabled }: { hidden: boolean, aud
                 <AudioEqBars height={6} barWidth={1.6} gap={1.4} />
             </div>
         </div>
+    );
+};
+
+// [Confirmed by Josh, 2026-09-20] Widening this slider to fill its row
+// (flex: 1) fixed how much of it there was to grab, but a plain native
+// <input type="range"> isn't part of Decky's own gamepad-navigation graph at
+// all — only Focusable components are — so the D-pad could never land on it
+// to begin with, wide or not; only a mouse/trackpad cursor could actually
+// drag its thumb. Wrapping it in a Focusable and handling DIR_LEFT/
+// DIR_RIGHT directly (same idea as reorderModal.tsx's own onGrabButtonDown)
+// gives it real D-pad control — nudging the value a step at a time while
+// focused — without inheriting SliderField's own "ignores a narrow wrapping
+// div, always renders full-width" behavior (see the PanelSectionRow's own
+// comment below), which is what forced this to be a plain input rather than
+// SliderField in the first place. preventDefault() stops Steam's built-in
+// focus-nav from ALSO moving focus off this row to the next one on the same
+// D-pad press. The focus highlight (border/background) is drawn on the
+// wrapper since a native range input's own focus ring isn't something this
+// can restyle reliably across platforms.
+const VOLUME_NUDGE = 2;
+
+const VolumeSlider = ({ volume, muted, onChange }: { volume: number, muted: boolean, onChange: (volume: number) => void }) => {
+    const [focused, setFocused] = useState(false);
+    const nudge = (delta: number) => onChange(Math.max(0, Math.min(100, volume + delta)));
+
+    return (
+        <Focusable
+            style={{
+                flex: 1,
+                minWidth: 0,
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: 6,
+                padding: '2px 6px',
+                background: focused ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                border: focused ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
+            }}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onButtonDown={(evt: GamepadEvent) => {
+                if (muted) return;
+                if (evt.detail.button === GamepadButton.DIR_LEFT) {
+                    evt.preventDefault();
+                    nudge(-VOLUME_NUDGE);
+                } else if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+                    evt.preventDefault();
+                    nudge(VOLUME_NUDGE);
+                }
+            }}>
+            <input
+                aria-label="Volume"
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={volume}
+                disabled={muted}
+                onChange={e => onChange(Number(e.target.value))}
+                style={{ flex: 1, minWidth: 0, accentColor: 'white', opacity: muted ? 0.4 : 1 }} />
+        </Focusable>
     );
 };
 
@@ -412,7 +472,9 @@ const DisplayHeaderToggle = ({ collapsed, onToggle }: { collapsed: boolean, onTo
 // does for the panel's own content.
 export const TitleBar = () => {
     const [{ qamUseColor, qamCloseColor }, setGlobalState, stateContext] = useGlobalState();
-    const closeBg = qamUseColor ? hexToRgba(qamCloseColor, QAM_CLOSE_COLOR_ALPHA) : QAM_CLOSE_BG;
+    // undefined (not a fixed red) when qamUseColor is off — see that
+    // toggle's own comment above for why plain is now the off-state default.
+    const closeStyle: CSSProperties | undefined = qamUseColor ? { background: hexToRgba(qamCloseColor, QAM_CLOSE_COLOR_ALPHA) } : undefined;
 
     return (
         <Focusable
@@ -424,7 +486,7 @@ export const TitleBar = () => {
                 flow-children="horizontal">
                 <IconButton
                     title="Close"
-                    style={{ background: closeBg }}
+                    style={closeStyle}
                     onActivate={() => setGlobalState(state => ({
                         ...state,
                         viewMode: ViewMode.Closed,
@@ -751,11 +813,9 @@ export const Settings = () => {
                             size={34}
                             active={!playing}
                             title={playing ? "Pause" : "Play"}
-                            style={{
-                                background: qamUseColor
-                                    ? hexToRgba(playing ? qamPauseColor : qamPlayColor, QAM_COLOR_ALPHA)
-                                    : (playing ? QAM_PAUSE_BG : QAM_PLAY_BG)
-                            }}
+                            style={qamUseColor
+                                ? { background: hexToRgba(playing ? qamPauseColor : qamPlayColor, QAM_COLOR_ALPHA) }
+                                : undefined}
                             onActivate={() => setGlobalState(state => ({
                                 ...state,
                                 playPauseSeq: state.playPauseSeq + 1,
@@ -806,7 +866,10 @@ export const Settings = () => {
                         row's own width — same width the icon rows above and
                         below it already span — with minWidth: 0 so a flex
                         child doesn't refuse to shrink below its intrinsic
-                        content size on first layout. */}
+                        content size on first layout. See VolumeSlider's own
+                        comment above for why the slider itself is wrapped in
+                        a Focusable rather than left as a bare input — width
+                        alone didn't make it D-pad reachable. */}
                     <Focusable
                         style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}
                         flow-children="horizontal">
@@ -816,16 +879,10 @@ export const Settings = () => {
                             onActivate={() => setGlobalState(state => ({ ...state, muted: !state.muted }))}>
                             {muted ? <FaVolumeMute /> : <FaVolumeUp />}
                         </IconButton>
-                        <input
-                            aria-label="Volume"
-                            type="range"
-                            min={0}
-                            max={100}
-                            step={1}
-                            value={volume}
-                            disabled={muted}
-                            onChange={e => setGlobalState(state => ({ ...state, volume: Number(e.target.value) }))}
-                            style={{ flex: 1, minWidth: 0, accentColor: 'white', opacity: muted ? 0.4 : 1 }} />
+                        <VolumeSlider
+                            volume={volume}
+                            muted={muted}
+                            onChange={volume => setGlobalState(state => ({ ...state, volume }))} />
                     </Focusable>
                 </PanelSectionRow>
                 <PanelSectionRow>
