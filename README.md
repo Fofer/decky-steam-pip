@@ -5,8 +5,8 @@ Steam PiP is a video plugin for Decky Loader that gives you flexible, floating p
 Steam PiP works out of the box with YouTube, Twitch, and .m3u8 (HLS) streams from local DVRs (like [Plex](https://www.plex.tv/tv/), [Channels DVR](https://getchannels.com/dvr-server/) and [HDHomeRun](https://www.silicondust.com/hdhomerun.html) tuners} and [IPTV](https://github.com/iptv-org/iptv) providers, plus any other site or free streaming service you can point a browser at. It does not, however, work with copyrighted content protected by DRM such as [Widevine](https://en.wikipedia.org/wiki/Widevine) (e.g. Netflix, Hulu, Disney+, etc.)
 
 <p align="center">
-  <img src="picture.jpg" width="47%" alt="Screenshot of PiP mode, floating over a game" />
-  <img src="controls.jpg" width="47%" alt="Screenshot of the Quick Access Menu controls" />
+  <img src="picture.jpg" height="340" alt="Screenshot of PiP mode, floating over a game" />
+  <img src="controls.jpg" height="340" alt="Screenshot of the Quick Access Menu controls" />
 </p>
 
 ## Features
