@@ -1,7 +1,7 @@
 import { useGlobalState } from "./globalState";
 import { intersectRectangles } from "./geometry";
 import { useDeckComponentBounds, useScreenBounds } from "./screen";
-import { PICTURE_ASPECT_RATIO, PICTURE_WIDTH_RATIO, Position, ViewMode } from "./util";
+import { CONTROL_BAR_WIDTH, PICTURE_ASPECT_RATIO, PICTURE_WIDTH_RATIO, Position, SIZE_MAX, SIZE_MIN, ViewMode } from "./util";
 
 // The exact on-screen rectangle {x, y, width, height} the PiP picture
 // occupies, in the same "virtual" coordinate space useScreenBounds()
@@ -16,16 +16,27 @@ import { PICTURE_ASPECT_RATIO, PICTURE_WIDTH_RATIO, Position, ViewMode } from ".
 // than trusting that measurement.
 const QAM_WIDTH_FRACTION = 0.25;
 
-// The docked width of the "shelf" the picture collapses to when hidden —
-// thin enough to read as a tucked-away sliver, not a smaller picture.
-const HIDDEN_SHELF_WIDTH = 14;
+// The native browser view's width while hidden — kept small (rather than
+// zero) since a fully zero-sized view risked breaking video/audio playback
+// on some pages, but it no longer needs to be big enough to read as a
+// visible "shelf": the whole rectangle is now parked entirely past the
+// screen's right edge (see the `hidden` branch below), so none of this
+// strip is actually on-screen. What used to be a deliberately-visible 14px
+// sliver of live video (with minimizedIndicator.tsx's badge floating over
+// it, masking it as best it could) is now fully off-canvas instead — the
+// badge is the only thing shown, drawn independently of these bounds.
+const HIDDEN_VIEW_WIDTH = 14;
 
 export const usePipBounds = () => {
     const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useScreenBounds();
     const { nav, qam, virtualKeyboard } = useDeckComponentBounds({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
     const [{ viewMode, position, size, hidden, ...settings }] = useGlobalState();
 
-    const pictureWidth = SCREEN_WIDTH * PICTURE_WIDTH_RATIO * size;
+    // Clamped to the Size slider's current own range — guards against a
+    // persisted value from before that range last changed (the slider only
+    // clamps what it displays, not the stored value underneath it).
+    const clampedSize = Math.max(SIZE_MIN, Math.min(SIZE_MAX, size));
+    const pictureWidth = SCREEN_WIDTH * PICTURE_WIDTH_RATIO * clampedSize;
     const pictureHeight = pictureWidth * (1.0 / PICTURE_ASPECT_RATIO);
 
     // The Quick Access Menu is deliberately left out of this base layout
@@ -91,7 +102,14 @@ export const usePipBounds = () => {
 
     switch (viewMode) {
         case ViewMode.Expand: {
-            // do nothing, screen is calculated initially to fullscreen
+            // Reserves room on the right for the on-screen control bar
+            // (controlBar.tsx) — Expand mode otherwise fills the whole
+            // available area, which would leave the bar drawn right over
+            // the picture instead of beside it. Not needed while hidden,
+            // since the bar doesn't show then either.
+            if (!hidden && settings.controlBarEnabled) {
+                bounds.width -= CONTROL_BAR_WIDTH;
+            }
         } break;
 
         case ViewMode.Picture: {
@@ -123,6 +141,23 @@ export const usePipBounds = () => {
                 case Position.TopLeft: {
                     // do nothing, screen is calculated initially to top left
                 } break;
+                case Position.Custom: {
+                    // [Confirmed by Josh, 2026-09-20] customPosX/customPosY
+                    // (globalState.tsx) are fractions (0-1) of the space the
+                    // picture is actually free to occupy within these
+                    // available bounds — not raw pixels, so a saved custom
+                    // spot stays correct across different screen
+                    // resolutions, the same way the 8 presets already do.
+                    // 0 lands the picture flush at TopLeft, 1 flush at the
+                    // opposite (bottom-right) corner; clamped here too, in
+                    // case a stored value ever ends up outside 0-1.
+                    const maxX = Math.max(0, bounds.width - pictureWidth);
+                    const maxY = Math.max(0, bounds.height - pictureHeight);
+                    const fracX = Math.max(0, Math.min(1, settings.customPosX));
+                    const fracY = Math.max(0, Math.min(1, settings.customPosY));
+                    bounds.x += fracX * maxX;
+                    bounds.y += fracY * maxY;
+                } break;
             }
 
             bounds.width = pictureWidth;
@@ -130,16 +165,13 @@ export const usePipBounds = () => {
         } break;
     }
 
-    // Collapsing to the hidden "shelf" always docks to the screen's right
-    // edge, regardless of whichever position/Expand geometry was just
-    // computed above — the point is a single predictable parking spot, not
-    // "wherever it happened to be." Vertical placement (and picture height)
-    // is left as-is, so it visually shrinks in from the side rather than
-    // jumping somewhere new, and un-hiding restores the exact same spot.
-    if (hidden) {
-        bounds.x = SCREEN_WIDTH - margin - HIDDEN_SHELF_WIDTH;
-        bounds.width = HIDDEN_SHELF_WIDTH;
-    }
+    // Captured here — after the position layout above, before the `hidden`
+    // override below overwrites bounds.x/width for the native view — so
+    // this always reflects where the picture actually rests (or would
+    // rest) regardless of hidden. minimizedIndicator.tsx uses this to plant
+    // its badge exactly where the picture was last positioned/sized, rather
+    // than some fixed spot the user'd have to go hunting for.
+    const restRect = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
 
     // Only nudge the picture out of QAM's way when it would actually be
     // covered by it, and only by as much as needed to clear it (QAM is
@@ -147,21 +179,46 @@ export const usePipBounds = () => {
     // horizontal check is needed) — not a full recenter, and not all the
     // way to the left edge, both of which were symptoms of trusting QAM's
     // own (unreliable) measured bounds instead of the fixed fraction above.
-    if (qam && (viewMode == ViewMode.Picture || hidden)) {
+    // Applied to restRect unconditionally (not just while actually visible)
+    // so the resting position used for the hidden badge already accounts
+    // for QAM, rather than drifting once the picture's un-hidden and this
+    // runs again.
+    if (qam && viewMode == ViewMode.Picture) {
         const qamLeft = SCREEN_WIDTH * (1 - QAM_WIDTH_FRACTION);
-        const overlapsHorizontally = bounds.x + bounds.width > qamLeft;
+        const overlapsHorizontally = restRect.x + restRect.width > qamLeft;
 
         // Flush against QAM's edge rather than leaving the picture's own
         // margin setting as a gap here too — a few px keeps it from
         // literally touching the menu, not a whole "Margin" slider's worth.
         const qamClearance = 6;
 
+        // Subtracting margin here (not just in the position formulas above)
+        // was the missing piece for every right-docked position (Right,
+        // TopRight, BottomRight): QAM's own safe distance from the screen's
+        // right edge is far bigger than the margin slider's whole range, so
+        // without this the clamp below always won outright and pinned the
+        // picture to one fixed spot no matter what margin was set to — the
+        // picture would visibly move on the left side (nothing here
+        // clamps it) but sit frozen (or only move on one axis, for the
+        // corners) on the right. Folding margin into the boundary itself
+        // means increasing margin keeps pushing the picture further from
+        // QAM too, instead of the two fighting each other.
         if (overlapsHorizontally) {
             const minX = margin;
-            const maxX = qamLeft - qamClearance - bounds.width;
-            bounds.x = Math.max(minX, Math.min(bounds.x, maxX));
+            const maxX = qamLeft - qamClearance - restRect.width - margin;
+            restRect.x = Math.max(minX, Math.min(restRect.x, maxX));
         }
     }
 
-    return bounds;
+    // Hidden parks the native browser view entirely past the screen's right
+    // edge — not docked to it as a visible sliver anymore (see
+    // HIDDEN_VIEW_WIDTH above) — so there's no live video on-screen at all
+    // while hidden, just minimizedIndicator.tsx's own badge (planted at
+    // restRect's center, above) floating independently of these bounds.
+    // Otherwise (not hidden), bounds is simply restRect, QAM nudge and all.
+    const finalBounds = hidden
+        ? { ...restRect, x: SCREEN_WIDTH, width: HIDDEN_VIEW_WIDTH }
+        : restRect;
+
+    return { ...finalBounds, restCenterX: restRect.x + restRect.width / 2, restCenterY: restRect.y + restRect.height / 2 };
 }

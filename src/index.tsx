@@ -1,20 +1,21 @@
 import merge from 'lodash/merge'
 import { FaTv } from "react-icons/fa";
 import { StateManager } from "cotton-box";
-import { quickAccessMenuClasses } from "@decky/ui";
 import { definePlugin, routerHook, } from "@decky/api";
 
 import { PipOuter } from "./pip";
-import { Settings } from "./settings";
-import { Position, ViewMode } from "./util";
+import { Settings, TitleBar } from "./settings";
+import { Position, ViewMode, DEFAULT_VIEW_ORDER, DEFAULT_CONTROL_ORDER, reconcileOrder } from "./util";
 import { State, Bookmark, GlobalContext } from "./globalState";
 import { CURATED_BOOKMARKS } from "./defaultBookmarks";
-import { PERSONAL_BOOKMARKS } from "./personalBookmarks";
+import { PERSONAL_BOOKMARKS, PERSONAL_DEFAULT_EPG_URL } from "./personalBookmarks";
+import { isLikelySteamDeck } from "./screen";
 
-// PERSONAL_BOOKMARKS lives in a gitignored file (src/personalBookmarks.tsx)
-// and is never meant to ship in the public repo — if that file is removed
-// for a public build, delete this import and the seeding block below along
-// with it.
+// PERSONAL_BOOKMARKS/PERSONAL_DEFAULT_EPG_URL live in src/personalBookmarks.tsx,
+// which is checked in as an empty public template (see that file) so a plain
+// clone always builds. A local build with real personal data edits that file
+// in place and marks it `git update-index --skip-worktree` so those edits
+// never show up in `git status` or get committed/pushed by accident.
 const PERSONAL_SEEDED_KEY = 'pip-personal-seeded';
 
 const DEFAULTS = {
@@ -24,14 +25,65 @@ const DEFAULTS = {
     margin: 20,
     size: 0.80,
     url: CURATED_BOOKMARKS[0].url,
+    previousUrl: '',
     volume: 100,
     muted: false,
+    opacity: 100,
     playPauseSeq: 0,
     seekBackSeq: 0,
     seekForwardSeq: 0,
+    seekBack30Seq: 0,
+    seekForward30Seq: 0,
+    screenshotFlashSeq: 0,
+    lastScreenshotResult: '',
+    playing: true,
     nowPlaying: null,
     showNowPlaying: true,
+    defaultEpgUrl: PERSONAL_DEFAULT_EPG_URL,
+    // On by default on a Steam Deck (has a touchscreen, so there's always
+    // something to tap it with), off by default anywhere else (a Steam
+    // Machine on a TV is normally controller-only, with no cursor to click
+    // it) — see the field's own comment in globalState.tsx. Either way it's
+    // just this run's starting point; the toggle in the panel changes it
+    // from then on.
+    controlBarEnabled: isLikelySteamDeck(),
+    controlBarAlwaysVisible: false,
+    appearanceCollapsed: false,
     hidden: false,
+    audioIndicatorEnabled: true,
+    screenshotEnabled: false,
+    screenshotSaveDir: '',
+    overlayConnected: true,
+    overlayShowMaximize: true,
+    overlayShowPosition: true,
+    overlayShowScreenshot: true,
+    overlayShowHide: true,
+    overlayShowSwap: true,
+    overlayShowClose: true,
+    overlayShowSeekBack: true,
+    overlayShowPlayPause: true,
+    overlayShowSeekForward: true,
+    overlayShowVolume: true,
+    overlayShowSeekBack30: true,
+    overlayShowSeekForward30: true,
+    overlayShowMove: true,
+    qamShowSeekBack30: true,
+    qamShowSeekBack: true,
+    qamShowSeekForward: true,
+    qamShowSeekForward30: true,
+    qamUseColor: false,
+    // Hex equivalents of the fixed defaults these replace when qamUseColor
+    // is turned on (settings.tsx's QAM_PLAY_BG/QAM_PAUSE_BG and TitleBar's
+    // Close background) — so switching the toggle on for the first time
+    // starts from the same look already in use, not some new arbitrary
+    // color.
+    qamPlayColor: '#78c878',
+    qamPauseColor: '#6ea5dc',
+    qamCloseColor: '#dc3c3c',
+    viewOrder: DEFAULT_VIEW_ORDER,
+    controlOrder: DEFAULT_CONTROL_ORDER,
+    customPosX: 0.5,
+    customPosY: 0.5,
 };
 
 // Builds the initial state. Bookmarks are handled outside of lodash's
@@ -52,6 +104,13 @@ const buildInitialState = (): State => {
     const { bookmarks: persistedBookmarks, url: persistedUrl, ...persistedRest } = persisted;
 
     const merged = merge({}, DEFAULTS, persistedRest) as State;
+    // [Confirmed by Josh, 2026-09-20] Overrides whatever the plain merge()
+    // above did to these two arrays specifically — see reconcileOrder's own
+    // comment (util.tsx) for why a brand new order-array item needs this
+    // rather than trusting merge()'s by-index array behavior to place it
+    // safely.
+    merged.viewOrder = reconcileOrder(persistedRest.viewOrder, DEFAULT_VIEW_ORDER);
+    merged.controlOrder = reconcileOrder(persistedRest.controlOrder, DEFAULT_CONTROL_ORDER);
 
     let bookmarks: Bookmark[];
     if (persistedBookmarks === undefined) {
@@ -88,8 +147,8 @@ const buildInitialState = (): State => {
 export default definePlugin(() => {
     const state = new StateManager<State>(buildInitialState());
 
-    state.watch(({ position, margin, size, url, bookmarks, volume, muted, showNowPlaying }) =>
-        localStorage.setItem('pip', JSON.stringify({ position, margin, size, url, bookmarks, volume, muted, showNowPlaying })));
+    state.watch(({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY }) =>
+        localStorage.setItem('pip', JSON.stringify({ position, margin, size, url, previousUrl, bookmarks, volume, muted, opacity, showNowPlaying, defaultEpgUrl, controlBarEnabled, controlBarAlwaysVisible, appearanceCollapsed, audioIndicatorEnabled, screenshotEnabled, screenshotSaveDir, overlayConnected, overlayShowMaximize, overlayShowPosition, overlayShowScreenshot, overlayShowHide, overlayShowSwap, overlayShowClose, overlayShowSeekBack, overlayShowPlayPause, overlayShowSeekForward, overlayShowVolume, overlayShowSeekBack30, overlayShowSeekForward30, overlayShowMove, qamShowSeekBack30, qamShowSeekBack, qamShowSeekForward, qamShowSeekForward30, qamUseColor, qamPlayColor, qamPauseColor, qamCloseColor, viewOrder, controlOrder, customPosX, customPosY })));
 
     routerHook.addGlobalComponent("PictureInPicture", () => {
         return <GlobalContext.Provider value={state}>
@@ -99,7 +158,12 @@ export default definePlugin(() => {
 
     return {
         name: "Steam PiP",
-        titleView: <div className={quickAccessMenuClasses.Title}>Steam PiP</div>,
+        // TitleBar (settings.tsx) adds Close and Manage Channels as small
+        // icon buttons at the top-right corner of the title row, matching
+        // Decky's own CSS Loader plugin's layout — needs the same
+        // GlobalContext as the rest of the panel, since both buttons act on
+        // shared state.
+        titleView: <GlobalContext.Provider value={state}><TitleBar /></GlobalContext.Provider>,
         icon: <FaTv />,
         content:
             <GlobalContext.Provider value={state}>

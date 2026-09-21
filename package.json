@@ -1,6 +1,6 @@
 {
   "name": "decky-steam-pip",
-  "version": "1.0.0",
+  "version": "0.7.1",
   "description": "Picture-in-picture plugin for Decky Loader, working on both Steam Deck and Steam Machine. Fork of decky-pip.",
   "type": "module",
   "scripts": {

@@ -16,7 +16,9 @@ import {
 // resolution of 1280x800, so a device reporting that is treated as a Deck
 // and kept on the original, known-good hardcoded placement. Anything else
 // (a Steam Machine on a TV, etc.) uses the dynamically-measured path below.
-const isLikelySteamDeck = () =>
+// Exported so other modules (index.tsx, for the on-screen control bar's
+// device-based default) can use the same heuristic without re-measuring.
+export const isLikelySteamDeck = () =>
     window.screen?.width === DECK_NATIVE_WIDTH
     && window.screen?.height === DECK_NATIVE_HEIGHT;
 

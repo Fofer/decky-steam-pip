@@ -2,13 +2,16 @@ import {
     Router,
     WindowRouter,
 } from "@decky/ui";
-import { call } from "@decky/api";
 import { useEffect, useRef, useState } from "react";
 
 import { NowPlaying, useGlobalState } from "./globalState";
+import { backendCall } from "./backendCall";
 import { usePipBounds } from "./pipBounds";
 import { UIComposition, useUIComposition } from "./useUIComposition";
-import { ViewMode } from "./util";
+import { getControlBarSides, ViewMode } from "./util";
+import { ControlBar } from "./controlBar";
+import { MinimizedIndicator } from "./minimizedIndicator";
+import { ScreenshotFlash } from "./screenshotFlash";
 
 interface BrowserProps {
     url: string
@@ -27,12 +30,20 @@ interface BrowserProps {
     // pressed — same fire-once-counter pattern as playPauseSeq.
     seekBackSeq: number
     seekForwardSeq: number
+    // Same idea, for the 30-second jump buttons added alongside the
+    // original 10-second ones.
+    seekBack30Seq: number
+    seekForward30Seq: number
     // For a channel with an XMLTV guide (Bookmark.epgUrl) and its display
     // name, used to poll the backend for what's currently airing; undefined
     // for a channel with no guide, which simply never polls.
     epgUrl?: string
     channelName?: string
     showNowPlaying: boolean
+    // Fades the picture's own content toward its page background as this
+    // drops from 100 — see opacityJs for what this can and can't actually
+    // do.
+    opacity: number
     onNowPlaying: (nowPlaying: NowPlaying | null) => void
     x: number
     y: number
@@ -208,9 +219,32 @@ const buildHlsPageUrl = (streamUrl: string) => {
     return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
 };
 
+// Fades the loaded page's own content via CSS opacity on <html> — this is
+// NOT true window transparency letting the game underneath show through.
+// [Unverified] CreateBrowserView is an undocumented internal Steam API with
+// no publicly known method for real alpha-compositing against whatever's
+// behind it, and no evidence of one turned up anywhere this was checked
+// (including other Decky plugins using the same browser view). What this
+// actually does is fade the picture toward whatever background color the
+// loaded page itself paints (usually black) as the slider drops from 100 —
+// a real, useful dimming effect, just not "see-through."
+const opacityJs = (opacity: number) => {
+    const clamped = Math.max(0, Math.min(100, opacity)) / 100;
+    return `
+window.__pipOpacity = ${clamped};
+window.__pipApplyOpacity = window.__pipApplyOpacity || function () {
+    document.documentElement.style.opacity = window.__pipOpacity;
+};
+window.__pipApplyOpacity();
+if (!window.__pipOpacityWatcher) {
+    window.__pipOpacityWatcher = setInterval(window.__pipApplyOpacity, 1000);
+}
+`;
+};
+
 const NOW_PLAYING_POLL_MS = 60000;
 
-const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekForwardSeq, epgUrl, channelName, showNowPlaying, onNowPlaying, x, y, width, height }: BrowserProps) => {
+const Browser = ({ url, visible, volume, muted, opacity, playPauseSeq, seekBackSeq, seekForwardSeq, seekBack30Seq, seekForward30Seq, epgUrl, channelName, showNowPlaying, onNowPlaying, x, y, width, height }: BrowserProps) => {
     useUIComposition(UIComposition.Notification);
 
     const [{ browser, view }] = useState<{ browser: any, view: any }>(() => {
@@ -241,10 +275,16 @@ const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekF
     volumeRef.current = volume;
     const mutedRef = useRef(muted);
     mutedRef.current = muted;
+    const opacityRef = useRef(opacity);
+    opacityRef.current = opacity;
 
     useEffect(() => {
         injectJs(preludeJs + volumeJs(volume, muted));
     }, [volume, muted]);
+
+    useEffect(() => {
+        injectJs(opacityJs(opacity));
+    }, [opacity]);
 
     // Skip the very first run (playPauseSeq starts at 0 on mount) so
     // opening the picture doesn't immediately pause whatever was playing.
@@ -277,6 +317,25 @@ const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekF
         injectJs(preludeJs + seekJs(10));
     }, [seekForwardSeq]);
 
+    // Same first-run skip, for the 30-second jump buttons.
+    const seekBack30Mounted = useRef(false);
+    useEffect(() => {
+        if (!seekBack30Mounted.current) {
+            seekBack30Mounted.current = true;
+            return;
+        }
+        injectJs(preludeJs + seekJs(-30));
+    }, [seekBack30Seq]);
+
+    const seekForward30Mounted = useRef(false);
+    useEffect(() => {
+        if (!seekForward30Mounted.current) {
+            seekForward30Mounted.current = true;
+            return;
+        }
+        injectJs(preludeJs + seekJs(30));
+    }, [seekForward30Seq]);
+
     useEffect(() => {
         browser.SetVisible(visible);
     }, [visible]);
@@ -288,7 +347,7 @@ const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekF
         // instant the page starts loading, so keep reapplying for a while
         // after navigation until the in-page watcher above is armed.
         const poll = setInterval(
-            () => injectJs(preludeJs + volumeJs(volumeRef.current, mutedRef.current)),
+            () => injectJs(preludeJs + volumeJs(volumeRef.current, mutedRef.current) + opacityJs(opacityRef.current)),
             700);
         const stop = setTimeout(() => clearInterval(poll), 20000);
         return () => { clearInterval(poll); clearTimeout(stop); };
@@ -315,8 +374,15 @@ const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekF
         const poll = async () => {
             let result: NowPlaying | null = null;
             try {
-                result = await call<[string, string], NowPlaying | null>("get_now_playing", epgUrl, channelName);
-            } catch (e) { /* ignore — backend/server hiccup, try again next poll */ }
+                result = await backendCall<[string, string], NowPlaying | null>("get_now_playing", epgUrl, channelName);
+            } catch (e) {
+                // Surfaced to the console rather than swallowed outright —
+                // if this is throwing (as opposed to the backend just not
+                // finding a match, which returns null instead of throwing),
+                // it likely means the plugin backend didn't pick up main.py's
+                // get_now_playing method at all (stale install/no restart).
+                console.error("SteamPiP: get_now_playing call failed", e);
+            }
             if (cancelled) return;
             onNowPlaying(result);
             injectJs(nowPlayingJs(result));
@@ -340,22 +406,49 @@ const Browser = ({ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekF
 
 export const Pip = () => {
     const bounds = usePipBounds();
-    const [{ url, visible, volume, muted, playPauseSeq, seekBackSeq, seekForwardSeq, bookmarks, showNowPlaying }, setGlobalState] = useGlobalState();
+    const [{ url, visible, volume, muted, opacity, playPauseSeq, seekBackSeq, seekForwardSeq, seekBack30Seq, seekForward30Seq, screenshotFlashSeq, bookmarks, showNowPlaying, defaultEpgUrl, viewMode, position, hidden, controlBarEnabled, audioIndicatorEnabled }, setGlobalState] = useGlobalState();
     const currentBookmark = bookmarks.find(b => b.url === url);
+    // A channel's own guide URL wins if it has one; otherwise fall back to
+    // the single guide URL set for all channels (most people only have one
+    // guide source anyway) — unless this bookmark isn't really a live
+    // channel at all (YouTube, a website, etc.), which opts out of that
+    // fallback entirely (see Bookmark.noGuide's own comment).
+    const effectiveEpgUrl = currentBookmark?.noGuide ? undefined : (currentBookmark?.epgUrl || defaultEpgUrl || undefined);
 
-    return <Browser
-        url={url}
-        visible={visible}
-        volume={volume}
-        muted={muted}
-        playPauseSeq={playPauseSeq}
-        seekBackSeq={seekBackSeq}
-        seekForwardSeq={seekForwardSeq}
-        epgUrl={currentBookmark?.epgUrl}
-        channelName={currentBookmark?.name}
-        showNowPlaying={showNowPlaying}
-        onNowPlaying={nowPlaying => setGlobalState(state => ({ ...state, nowPlaying }))}
-        {...bounds} />;
+    // The on-screen control bar (see controlBar.tsx) wraps an L around
+    // whichever corner of the picture has free space — a side segment and a
+    // top-or-bottom segment, each hugging whichever of the picture's edges
+    // isn't already flush against a screen boundary (or, on the right,
+    // against the QAM panel's own strip). In Expand mode there's no
+    // meaningful "free corner" (the picture fills nearly the whole screen),
+    // so it keeps the fixed right-side placement its bounds already reserve
+    // space for in pipBounds.tsx, same as before this L-shaped redesign.
+    const { vertical: verticalSide, horizontal: horizontalSide } = viewMode === ViewMode.Picture
+        ? getControlBarSides(position)
+        : { vertical: 'right' as const, horizontal: 'bottom' as const };
+
+    return <>
+        <Browser
+            url={url}
+            visible={visible}
+            volume={volume}
+            muted={muted}
+            opacity={opacity}
+            playPauseSeq={playPauseSeq}
+            seekBackSeq={seekBackSeq}
+            seekForwardSeq={seekForwardSeq}
+            seekBack30Seq={seekBack30Seq}
+            seekForward30Seq={seekForward30Seq}
+            epgUrl={effectiveEpgUrl}
+            channelName={currentBookmark && (currentBookmark.epgChannelName || currentBookmark.name)}
+            showNowPlaying={showNowPlaying}
+            onNowPlaying={nowPlaying => setGlobalState(state => ({ ...state, nowPlaying }))}
+            {...bounds} />
+        <ScreenshotFlash x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} seq={screenshotFlashSeq} />
+        {controlBarEnabled && (hidden
+            ? <MinimizedIndicator muted={muted} audioIndicatorEnabled={audioIndicatorEnabled} />
+            : <ControlBar {...bounds} verticalSide={verticalSide} horizontalSide={horizontalSide} viewMode={viewMode} />)}
+    </>;
 }
 
 export const PipOuter = () => {

@@ -56,6 +56,9 @@ cli/
 cli/*
 cli/decky
 
-# Josh's private, personal-build-only channel bookmarks (local Channels DVR
-# addresses) — never meant to ship in the public repo
-src/personalBookmarks.tsx
+# NOTE: src/personalBookmarks.tsx is intentionally NOT ignored — it's
+# tracked as an empty public template so the repo always builds. A local
+# build with real personal data edits that file in place and marks it
+# `git update-index --skip-worktree src/personalBookmarks.tsx` so those
+# edits are excluded from git's view instead of relying on .gitignore
+# (which only applies to untracked files).
